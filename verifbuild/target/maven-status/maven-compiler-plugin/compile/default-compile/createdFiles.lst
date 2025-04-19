@@ -1,0 +1,10 @@
+me\verifbuild\commands\VerifBuildCommand.class
+me\verifbuild\VerifBuild.class
+me\verifbuild\particles\ParticleRenderer.class
+me\verifbuild\verification\StructureRequirement.class
+me\verifbuild\verification\VerifierManager.class
+me\verifbuild\verification\VerificationArea.class
+me\verifbuild\config\ConfigManager.class
+me\verifbuild\util\LocationUtils.class
+me\verifbuild\verification\TriggerBlock.class
+me\verifbuild\listeners\BlockListener.class
