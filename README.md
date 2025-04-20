@@ -1,4 +1,4 @@
-# VerifBuild 0.1
+# VerifBuild 0.1.1
 Plugin de Minecraft Java sobre verificacion de estructuras y ejecutor de comandos. Versiones compatibles: 1.19.4 (Paper preferentemente)
 
 Este plugin esta orientado a servidores geopoliticos de minecraft. Puedes agregar areas de verificacion bloques personalizados y agregar tus propios requisitos,
