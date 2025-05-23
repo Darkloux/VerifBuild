@@ -1,0 +1,5 @@
+# Ignorar la carpeta .vscode
+.vscode/
+
+# Ignorar la carpeta target
+target/
