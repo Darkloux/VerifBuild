@@ -6,3 +6,7 @@ de bloques que quieras que esten dentro de esa area de verificacion.
 
 Tambien puedes elegir el tamaño del area de verificacion y el comando que se ejecute una vez la estructura verificada cumpla todos los requisitos.
 Simple y ligero.
+
+## Licencia
+
+Este proyecto está licenciado bajo la Licencia GNU GPL v3. Para más detalles, consulta el archivo [LICENSE](./LICENSE).
