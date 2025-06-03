@@ -1,8 +1,8 @@
 # Configuración de VerifBuild
 # Autor: DarkovDev
 
-# Tiempo de verificación
-time_verif: 120 # en segundos
+# Tiempo de verificación general (en segundos)
+time: 120
 
 # Mensajes del plugin
 messages:
@@ -18,8 +18,11 @@ verifications:
   # Casa básica
   basic_house:
     trigger-block: EMERALD_BLOCK
-    area-size: 5
+    area-x: 5
+    area-y: 5
+    area-z: 5
     max-uses: 10
+    time: 40 # Tiempo personalizado para esta estructura (en segundos)
     structure:
       OAK_PLANKS: 20
       OAK_LOG: 8
@@ -34,8 +37,11 @@ verifications:
   # Herrería
   blacksmith:
     trigger-block: ANVIL
-    area-size: 4
+    area-x: 4
+    area-y: 4
+    area-z: 4
     max-uses: 5
+    # No tiene tiempo personalizado, usará el general
     structure:
       COBBLESTONE: 15
       FURNACE: 2
@@ -51,7 +57,9 @@ verifications:
   # Altar mágico
   magic_altar:
     trigger-block: ENCHANTING_TABLE
-    area-size: 3
+    area-x: 3
+    area-y: 3
+    area-z: 3
     max-uses: 3
     structure:
       BOOKSHELF: 8
@@ -68,7 +76,9 @@ verifications:
   # Granja automática
   auto_farm:
     trigger-block: DISPENSER
-    area-size: 6
+    area-x: 6
+    area-y: 4
+    area-z: 6
     max-uses: -1
     structure:
       HOPPER: 4

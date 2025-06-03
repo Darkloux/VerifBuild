@@ -139,7 +139,16 @@ public class VerifierManager {
                 .findFirst().orElse(null);
     }
 
+    /**
+     * Obtiene el área de verificación activa de un jugador (si es el "placer").
+     * @param player Jugador a buscar
+     * @return VerificationArea si el jugador es el colocador, null si no tiene ninguna
+     */
     public VerificationArea getVerificationByPlayer(Player player) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (player == null) return null;
+        return activeVerifications.values().stream()
+                .filter(area -> area != null && area.getPlacer() != null && area.getPlacer().getUniqueId().equals(player.getUniqueId()))
+                .findFirst()
+                .orElse(null);
     }
 }

@@ -22,7 +22,7 @@ public class ItemUtils {
 
         List<String> lore = new ArrayList<>();
         lore.add("§7Tipo: §f" + triggerBlock.getId());
-        lore.add("§7Área: §f" + triggerBlock.getAreaSize() + "x" + triggerBlock.getAreaSize());
+        lore.add("§7Área: §f" + triggerBlock.getAreaX() + "x" + triggerBlock.getAreaY() + "x" + triggerBlock.getAreaZ());
         lore.add("§7Requisitos:");
         triggerBlock.getRequirement().getRequiredBlocks().forEach((mat, amount) ->
             lore.add("§7- §f" + amount + "x §e" + mat.name())

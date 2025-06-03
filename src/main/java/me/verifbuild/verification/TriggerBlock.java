@@ -9,13 +9,16 @@ public class TriggerBlock {
     
     private final String id;
     private final Material material;
-    private final int areaSize;
+    private final int areaX;
+    private final int areaY;
+    private final int areaZ;
     private final StructureRequirement requirement;
     private final List<String> successCommands;
     private final int relativeX;
     private final int relativeY;
     private final int relativeZ;
     private final int maxUses;
+    private final int verificationTimeSeconds;
     private int remainingUses;
     
     /**
@@ -23,19 +26,24 @@ public class TriggerBlock {
      *
      * @param id             The identifier for this trigger block
      * @param material       The material that triggers the verification
-     * @param areaSize       The size of the verification area
+     * @param areaX          The size of the verification area in the X dimension
+     * @param areaY          The size of the verification area in the Y dimension
+     * @param areaZ          The size of the verification area in the Z dimension
      * @param requirement    The structure requirements
      * @param successCommands Commands to execute on success
      * @param relativeX      Relative X coordinate for command execution
      * @param relativeY      Relative Y coordinate for command execution
      * @param relativeZ      Relative Z coordinate for command execution
      * @param maxUses        Maximum number of times this trigger can be used (-1 for unlimited)
+     * @param verificationTimeSeconds Time in seconds for verification
      */
-    public TriggerBlock(String id, Material material, int areaSize, StructureRequirement requirement,
-                        List<String> successCommands, int relativeX, int relativeY, int relativeZ, int maxUses) {
+    public TriggerBlock(String id, Material material, int areaX, int areaY, int areaZ, StructureRequirement requirement,
+                        List<String> successCommands, int relativeX, int relativeY, int relativeZ, int maxUses, int verificationTimeSeconds) {
         this.id = id;
         this.material = material;
-        this.areaSize = areaSize;
+        this.areaX = areaX;
+        this.areaY = areaY;
+        this.areaZ = areaZ;
         this.requirement = requirement;
         this.successCommands = new ArrayList<>(successCommands);
         this.relativeX = relativeX;
@@ -43,6 +51,7 @@ public class TriggerBlock {
         this.relativeZ = relativeZ;
         this.maxUses = maxUses;
         this.remainingUses = maxUses;
+        this.verificationTimeSeconds = verificationTimeSeconds;
     }
     
     /**
@@ -73,12 +82,40 @@ public class TriggerBlock {
     }
     
     /**
+     * Gets the size of the verification area in the X dimension.
+     *
+     * @return The area size in X
+     */
+    public int getAreaX() {
+        return areaX;
+    }
+    
+    /**
+     * Gets the size of the verification area in the Y dimension.
+     *
+     * @return The area size in Y
+     */
+    public int getAreaY() {
+        return areaY;
+    }
+    
+    /**
+     * Gets the size of the verification area in the Z dimension.
+     *
+     * @return The area size in Z
+     */
+    public int getAreaZ() {
+        return areaZ;
+    }
+    
+    /**
      * Gets the size of the verification area.
      *
      * @return The area size
      */
     public int getAreaSize() {
-        return areaSize;
+        // Para retrocompatibilidad, devuelve el mayor de los tres ejes
+        return Math.max(Math.max(areaX, areaY), areaZ);
     }
     
     /**
@@ -142,5 +179,14 @@ public class TriggerBlock {
      */
     public int getRemainingUses() {
         return maxUses > 0 ? remainingUses : -1;
+    }
+    
+    /**
+     * Gets the time in seconds for verification.
+     *
+     * @return The verification time in seconds
+     */
+    public int getVerificationTimeSeconds() {
+        return verificationTimeSeconds;
     }
 }

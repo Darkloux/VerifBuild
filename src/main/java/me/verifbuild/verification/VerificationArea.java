@@ -41,11 +41,14 @@ public class VerificationArea {
         this.triggerBlock = triggerBlock;
         this.triggerLocation = triggerLocation.clone();
         this.placer = placer;
-    
-        int radius = triggerBlock.getAreaSize() / 2;
-        this.minLocation = triggerLocation.clone().add(-radius, 0, -radius);
-        this.maxLocation = triggerLocation.clone().add(radius, triggerBlock.getAreaSize(), radius);
-    
+
+        // Usar dimensiones personalizadas
+        int halfX = triggerBlock.getAreaX() / 2;
+        int halfY = triggerBlock.getAreaY() / 2;
+        int halfZ = triggerBlock.getAreaZ() / 2;
+        this.minLocation = triggerLocation.clone().add(-halfX, 0, -halfZ);
+        this.maxLocation = triggerLocation.clone().add(halfX, triggerBlock.getAreaY(), halfZ);
+
         this.particleRenderer = new ParticleRenderer(plugin, minLocation, maxLocation);
     }
     
@@ -61,6 +64,7 @@ public class VerificationArea {
         verificationTask = Bukkit.getScheduler().runTaskTimer(plugin, this::verifyStructure, interval, interval);
     
         // Cancelación automática si no se completa
+        int verificationTimeTicks = triggerBlock.getVerificationTimeSeconds() * 20;
         expirationTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!completed) {
                 completed = true;
@@ -82,7 +86,7 @@ public class VerificationArea {
     
                 plugin.getVerifierManager().removeVerification(id);
             }
-        }, plugin.getConfigManager().getVerificationTimeoutTicks());
+        }, verificationTimeTicks);
     }
     
     public void stopVerification() {
@@ -247,6 +251,12 @@ public class VerificationArea {
 
     public TriggerBlock getTriggerBlock() {
         return triggerBlock;
+    }
+    /**
+     * Devuelve el jugador que colocó el bloque verificador.
+     */
+    public Player getPlacer() {
+        return placer;
     }
     public int getCurrentBlockCount() {
         Map<Material, Integer> current = new HashMap<>();

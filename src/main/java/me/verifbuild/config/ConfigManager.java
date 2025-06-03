@@ -66,60 +66,71 @@ public class ConfigManager {
         for (String key : verificationsSection.getKeys(false)) {
             ConfigurationSection verificationSection = verificationsSection.getConfigurationSection(key);
             if (verificationSection == null) continue;
-            
             try {
                 // Load trigger block
                 String triggerBlockStr = verificationSection.getString("trigger-block");
                 Material triggerMaterial = Material.valueOf(triggerBlockStr);
-                
-                // Load area size
-                int areaSize = verificationSection.getInt("area-size", 4);
-                
+
+                // Leer dimensiones del área (x, y, z) o area-size para retrocompatibilidad
+                int areaX = verificationSection.getInt("area-x", -1);
+                int areaY = verificationSection.getInt("area-y", -1);
+                int areaZ = verificationSection.getInt("area-z", -1);
+                int areaSize = verificationSection.getInt("area-size", -1);
+                if (areaX <= 0 || areaY <= 0 || areaZ <= 0) {
+                    // Si no están definidos, usar area-size
+                    areaX = areaY = areaZ = areaSize > 0 ? areaSize : 4;
+                }
+
                 // Load max uses
                 int maxUses = verificationSection.getInt("max-uses", -1);
-                
+
                 // Load structure requirements
                 ConfigurationSection structureSection = verificationSection.getConfigurationSection("structure");
                 if (structureSection == null) {
                     plugin.getLogger().warning("No structure requirements found for verification: " + key);
                     continue;
                 }
-                
+
                 Map<Material, Integer> requiredBlocks = new HashMap<>();
                 for (String blockKey : structureSection.getKeys(false)) {
                     Material material = Material.valueOf(blockKey);
                     int amount = structureSection.getInt(blockKey);
                     requiredBlocks.put(material, amount);
                 }
-                
+
                 StructureRequirement requirement = new StructureRequirement(requiredBlocks);
-                
+
                 // Load commands
                 ConfigurationSection successSection = verificationSection.getConfigurationSection("on-success");
                 if (successSection == null) {
                     plugin.getLogger().warning("No success actions found for verification: " + key);
                     continue;
                 }
-                
+
                 String executeAt = successSection.getString("execute-at", "0,0,0");
                 String[] coords = executeAt.split(",");
                 int relX = Integer.parseInt(coords[0]);
                 int relY = Integer.parseInt(coords[1]);
                 int relZ = Integer.parseInt(coords[2]);
-                
+
+                // Leer tiempo personalizado o usar el general
+                int generalTime = config.getInt("time", 120);
+                int customTime = verificationSection.getInt("time", generalTime);
+
                 TriggerBlock triggerBlock = new TriggerBlock(
                         key,
                         triggerMaterial,
-                        areaSize,
+                        areaX, areaY, areaZ,
                         requirement,
                         successSection.getStringList("commands"),
                         relX, relY, relZ,
-                        maxUses
+                        maxUses,
+                        customTime
                 );
-                
+
                 triggerBlockMap.put(key, triggerBlock);
                 plugin.getLogger().info("Loaded verification: " + key);
-                
+
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().log(Level.SEVERE, "Error loading verification: " + key, e);
             }
