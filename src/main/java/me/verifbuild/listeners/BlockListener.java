@@ -7,8 +7,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -94,13 +97,18 @@ public class BlockListener implements Listener {
         // Check if this is a trigger block for an active verification
         VerificationArea area = plugin.getVerifierManager().getVerificationByTriggerLocation(block.getLocation());
         if (area != null) {
+            // Si la estructura ya fue verificada, permitir romper normalmente
+            if (area.isCompleted()) {
+                // Permitir romper el bloque normalmente
+                return;
+            }
+            // Si NO está verificada, solo cancelar si tiene permiso de cancelación
             if (!player.hasPermission("verifbuild.cancel." + block.getType().name()) && 
                 !player.hasPermission("verifbuild.cancel.*")) {
                 player.sendMessage("§cYou don't have permission to cancel this verification.");
                 event.setCancelled(true);
                 return;
             }
-        
             // Devolver el bloque verificador si corresponde
             switch (player.getGameMode()) {
                 case SURVIVAL:
@@ -111,9 +119,46 @@ public class BlockListener implements Listener {
                 default:
                     break;
             }
-        
             // Remover el área
             plugin.getVerifierManager().removeVerification(area.getId());
+        }
+    }
+    
+    /**
+     * Maneja la interacción de clic derecho sobre el executor block (solo si NO hay verificación activa en ese bloque).
+     */
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        // Solo main hand para evitar doble ejecución
+        if (event.getHand() != null && event.getHand() != EquipmentSlot.HAND) return;
+        if (event.useInteractedBlock() == org.bukkit.event.Event.Result.DENY) return;
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        Block block = event.getClickedBlock();
+        if (block == null) return;
+        Player player = event.getPlayer();
+        // Si hay una verificación activa en ese bloque, NO ejecutar comandos de interacción
+        VerificationArea area = plugin.getVerifierManager().getVerificationByTriggerLocation(block.getLocation());
+        if (area != null && !area.isCompleted()) {
+            // Está en proceso de verificación, no ejecutar nada
+            return;
+        }
+        // Buscar si el bloque es un executor block de alguna estructura
+        for (TriggerBlock triggerBlock : plugin.getConfigManager().getTriggerBlocks().values()) {
+            if (block.getType() == triggerBlock.getExecutorMaterial()) {
+                // Ejecutar comandos de interacción si existen
+                if (triggerBlock.getInteractCommands() != null && !triggerBlock.getInteractCommands().isEmpty()) {
+                    for (String command : triggerBlock.getInteractCommands()) {
+                        String processedCommand = command.replace("%player%", player.getName())
+                                .replace("%x%", String.valueOf(block.getX()))
+                                .replace("%y%", String.valueOf(block.getY()))
+                                .replace("%z%", String.valueOf(block.getZ()));
+                        plugin.getServer().dispatchCommand(plugin.getServer().getConsoleSender(), processedCommand);
+                    }
+                    // Mensaje eliminado para no estorbar la salida de comandos
+                }
+                event.setCancelled(true);
+                return;
+            }
         }
     }
 }

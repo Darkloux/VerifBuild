@@ -2,6 +2,7 @@ package me.verifbuild.config;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -106,7 +107,6 @@ public class ConfigManager {
                     plugin.getLogger().warning("No success actions found for verification: " + key);
                     continue;
                 }
-
                 String executeAt = successSection.getString("execute-at", "0,0,0");
                 String[] coords = executeAt.split(",");
                 int relX = Integer.parseInt(coords[0]);
@@ -115,7 +115,26 @@ public class ConfigManager {
 
                 // Leer tiempo personalizado o usar el general
                 int generalTime = config.getInt("time", 120);
-                int customTime = verificationSection.getInt("time", generalTime);
+                int customTime = verificationSection.getInt("time", -1);
+                int finalTime = (customTime <= 0) ? generalTime : customTime;
+
+                // Leer comandos de interacción (on-interact)
+                List<String> interactCommands = new java.util.ArrayList<>();
+                ConfigurationSection interactSection = verificationSection.getConfigurationSection("on-interact");
+                if (interactSection != null) {
+                    interactCommands = interactSection.getStringList("commands");
+                }
+
+                // Leer executor-block (opcional)
+                String executorBlockStr = verificationSection.getString("executor-block");
+                Material executorMaterial = null;
+                if (executorBlockStr != null && !executorBlockStr.isEmpty()) {
+                    try {
+                        executorMaterial = Material.valueOf(executorBlockStr);
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("Executor block inválido para " + key + ": " + executorBlockStr + ". Usando el mismo que el trigger block.");
+                    }
+                }
 
                 TriggerBlock triggerBlock = new TriggerBlock(
                         key,
@@ -125,7 +144,9 @@ public class ConfigManager {
                         successSection.getStringList("commands"),
                         relX, relY, relZ,
                         maxUses,
-                        customTime
+                        finalTime,
+                        interactCommands,
+                        executorMaterial
                 );
 
                 triggerBlockMap.put(key, triggerBlock);

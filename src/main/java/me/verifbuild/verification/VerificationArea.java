@@ -10,12 +10,10 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
 import me.verifbuild.VerifBuild;
 import me.verifbuild.particles.ParticleRenderer;
-import me.verifbuild.util.ItemUtils;
 import me.verifbuild.util.LocationUtils;
 
 
@@ -68,22 +66,11 @@ public class VerificationArea {
         expirationTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!completed) {
                 completed = true;
+                // Ya no se elimina el bloque verificador ni se dropea
                 stopVerification();
-    
                 if (placer != null && placer.isOnline()) {
                     placer.sendMessage(plugin.getConfigManager().getMessage("expired"));
-    
-                    switch (placer.getGameMode()) {
-                        case SURVIVAL:
-                        case ADVENTURE:
-                            ItemStack refundItem = ItemUtils.createVerifierItem(plugin, triggerBlock);
-                            placer.getInventory().addItem(refundItem);
-                            break;
-                        default:
-                            break;
-                    }
                 }
-    
                 plugin.getVerifierManager().removeVerification(id);
             }
         }, verificationTimeTicks);
@@ -104,10 +91,7 @@ public class VerificationArea {
             expirationTask = null;
         }
     
-        if (!completed && triggerLocation.getBlock().getType() == triggerBlock.getMaterial()) {
-            triggerLocation.getBlock().setType(Material.AIR);
-        }
-    
+        // Ya no se elimina el bloque verificador aquí
         if (!completed) {
             sendMessageToNearbyPlayers(plugin.getConfigManager().getMessage("deactivated"));
         }
@@ -145,8 +129,11 @@ public class VerificationArea {
             completed = true;
         
             Bukkit.getScheduler().runTask(plugin, () -> {
-                triggerBlock.useOnce(); //Este es el lugar correcto
-        
+                triggerBlock.useOnce();
+                // Reemplazar el trigger block por el executor block
+                if (triggerLocation.getBlock().getType() == triggerBlock.getMaterial()) {
+                    triggerLocation.getBlock().setType(triggerBlock.getExecutorMaterial());
+                }
                 executeSuccessCommands();
                 sendMessageToNearbyPlayers(plugin.getConfigManager().getMessage("completed"));
                 stopVerification();
@@ -216,6 +203,40 @@ public class VerificationArea {
         }
     }
     
+    public void executeInteractCommands(Player player) {
+        List<String> commands = triggerBlock.getInteractCommands();
+        if (commands == null || commands.isEmpty()) {
+            plugin.getLogger().info("[VerifBuild] No hay comandos de interacción configurados en este TriggerBlock.");
+            return;
+        }
+        plugin.getLogger().info("[VerifBuild] Ejecutando comandos de interacción: " + commands);
+        Location commandLocation = triggerLocation.clone().add(
+                triggerBlock.getRelativeX(),
+                triggerBlock.getRelativeY(),
+                triggerBlock.getRelativeZ()
+        );
+        for (int i = 0; i < commands.size(); i++) {
+            final String command = commands.get(i);
+            final long delay = i * 2L;
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                String processedCommand = command
+                        .replace("%x%", String.valueOf(commandLocation.getBlockX()))
+                        .replace("%y%", String.valueOf(commandLocation.getBlockY()))
+                        .replace("%z%", String.valueOf(commandLocation.getBlockZ()))
+                        .replace("%player%", player.getName());
+                plugin.getLogger().info("[VerifBuild] Ejecutando comando de interacción: " + processedCommand);
+                try {
+                    boolean success = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), processedCommand);
+                    if (!success) {
+                        plugin.getLogger().warning("[VerifBuild] El comando de interacción no se pudo ejecutar: " + processedCommand);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("[VerifBuild] Error ejecutando comando de interacción: " + processedCommand);
+                    plugin.getLogger().warning("Excepción: " + e.getMessage());
+                }
+            }, delay);
+        }
+    }
     
     public boolean isTriggerBlock(Location location) {
         return LocationUtils.isSameBlock(triggerLocation, location);

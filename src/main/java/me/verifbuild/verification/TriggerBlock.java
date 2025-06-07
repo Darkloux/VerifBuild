@@ -14,12 +14,14 @@ public class TriggerBlock {
     private final int areaZ;
     private final StructureRequirement requirement;
     private final List<String> successCommands;
+    private final List<String> interactCommands;
     private final int relativeX;
     private final int relativeY;
     private final int relativeZ;
     private final int maxUses;
     private final int verificationTimeSeconds;
     private int remainingUses;
+    private final Material executorMaterial;
     
     /**
      * Creates a new trigger block configuration.
@@ -38,7 +40,8 @@ public class TriggerBlock {
      * @param verificationTimeSeconds Time in seconds for verification
      */
     public TriggerBlock(String id, Material material, int areaX, int areaY, int areaZ, StructureRequirement requirement,
-                        List<String> successCommands, int relativeX, int relativeY, int relativeZ, int maxUses, int verificationTimeSeconds) {
+                        List<String> successCommands, int relativeX, int relativeY, int relativeZ, int maxUses, int verificationTimeSeconds,
+                        List<String> interactCommands, Material executorMaterial) {
         this.id = id;
         this.material = material;
         this.areaX = areaX;
@@ -52,6 +55,8 @@ public class TriggerBlock {
         this.maxUses = maxUses;
         this.remainingUses = maxUses;
         this.verificationTimeSeconds = verificationTimeSeconds;
+        this.interactCommands = interactCommands != null ? new ArrayList<>(interactCommands) : new ArrayList<>();
+        this.executorMaterial = executorMaterial != null ? executorMaterial : material;
     }
     
     /**
@@ -137,6 +142,15 @@ public class TriggerBlock {
     }
     
     /**
+     * Gets the commands to execute on interact.
+     *
+     * @return A list of interact commands
+     */
+    public List<String> getInteractCommands() {
+        return new ArrayList<>(interactCommands);
+    }
+    
+    /**
      * Gets the relative X coordinate for command execution.
      *
      * @return The relative X coordinate
@@ -188,5 +202,14 @@ public class TriggerBlock {
      */
     public int getVerificationTimeSeconds() {
         return verificationTimeSeconds;
+    }
+    
+    /**
+     * Gets the material of the executor block.
+     *
+     * @return The executor block material
+     */
+    public Material getExecutorMaterial() {
+        return executorMaterial;
     }
 }
