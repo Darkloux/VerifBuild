@@ -1,7 +1,7 @@
 name: VerifBuild
 version: '${project.version}'
 main: me.verifbuild.VerifBuild
-api-version: '1.19'
+api-version: '1.20'
 author: DarkovDev
 description: ${project.description}
 softdepend: [PlaceholderAPI]
