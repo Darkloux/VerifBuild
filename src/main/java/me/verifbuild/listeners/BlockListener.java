@@ -17,7 +17,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import me.verifbuild.VerifBuild;
-import me.verifbuild.util.ItemUtils;
 import me.verifbuild.verification.TriggerBlock;
 import me.verifbuild.verification.VerificationArea;
 
@@ -109,12 +108,12 @@ public class BlockListener implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            // Devolver el bloque verificador si corresponde
+            // Cancelar el drop normal y dar solo el verificador
+            event.setDropItems(false);
             switch (player.getGameMode()) {
                 case SURVIVAL:
                 case ADVENTURE:
-                    ItemStack refund = ItemUtils.createVerifierItem(plugin, area.getTriggerBlock());
-                    player.getInventory().addItem(refund);
+                    player.getInventory().addItem(me.verifbuild.util.ItemUtils.createVerifierItem(plugin, area.getTriggerBlock()));
                     break;
                 default:
                     break;

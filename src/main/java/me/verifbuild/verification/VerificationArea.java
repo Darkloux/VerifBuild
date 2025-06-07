@@ -9,6 +9,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -31,6 +34,10 @@ public class VerificationArea {
     private boolean completed = false;
     private final Player placer; // jugador que colocó el bloque verificador
     private BukkitTask expirationTask;
+    private BossBar bossBar;
+    private BukkitTask bossBarTask;
+    private long startTime;
+    private int verificationDuration;
 
     
     public VerificationArea(VerifBuild plugin, UUID id, TriggerBlock triggerBlock, Location triggerLocation, Player placer) {
@@ -53,20 +60,32 @@ public class VerificationArea {
     public void startVerification() {
         sendMessageToNearbyPlayers(plugin.getConfigManager().getMessage("activated"));
         particleRenderer.startRendering();
-    
+
+        // Bossbar: crear y mostrar
+        verificationDuration = triggerBlock.getVerificationTimeSeconds();
+        startTime = System.currentTimeMillis();
+        createAndShowBossBar();
+
         // Verificación inmediata
         Bukkit.getScheduler().runTask(plugin, this::verifyStructure);
-    
+
         // Verificar estructura cada X ticks
         int interval = plugin.getConfigManager().getVerificationIntervalTicks();
         verificationTask = Bukkit.getScheduler().runTaskTimer(plugin, this::verifyStructure, interval, interval);
-    
+
         // Cancelación automática si no se completa
-        int verificationTimeTicks = triggerBlock.getVerificationTimeSeconds() * 20;
+        int verificationTimeTicks = verificationDuration * 20;
         expirationTask = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!completed) {
                 completed = true;
-                // Ya no se elimina el bloque verificador ni se dropea
+                // Destruir y dropear el trigger block si sigue ahí
+                Block trigger = triggerLocation.getBlock();
+                if (trigger.getType() == triggerBlock.getMaterial()) {
+                    trigger.setType(Material.AIR);
+                    // Dropear el ítem verificador
+                    triggerLocation.getWorld().dropItemNaturally(triggerLocation,
+                        me.verifbuild.util.ItemUtils.createVerifierItem(plugin, triggerBlock));
+                }
                 stopVerification();
                 if (placer != null && placer.isOnline()) {
                     placer.sendMessage(plugin.getConfigManager().getMessage("expired"));
@@ -75,23 +94,66 @@ public class VerificationArea {
             }
         }, verificationTimeTicks);
     }
-    
+
+    private void createAndShowBossBar() {
+        String title = "§bTiempo restante";
+        bossBar = Bukkit.createBossBar(title, BarColor.BLUE, BarStyle.SEGMENTED_10);
+        bossBar.setProgress(1.0);
+        updateBossBarPlayers();
+        bossBar.setVisible(true);
+        bossBarTask = Bukkit.getScheduler().runTaskTimer(plugin, this::updateBossBar, 0L, 10L); // cada 0.5s
+    }
+
+    private void updateBossBar() {
+        // Calcular tiempo restante
+        long elapsed = (System.currentTimeMillis() - startTime) / 1000L;
+        long remaining = Math.max(0, verificationDuration - elapsed);
+        double progress = verificationDuration > 0 ? (remaining * 1.0 / verificationDuration) : 0;
+        bossBar.setProgress(Math.max(0, Math.min(1, progress)));
+        bossBar.setTitle("§bTiempo restante: §e" + remaining + "s");
+        updateBossBarPlayers();
+        if (remaining <= 0) {
+            bossBar.setProgress(0);
+        }
+    }
+
+    private void updateBossBarPlayers() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (isWithinArea(player.getLocation())) {
+                if (!bossBar.getPlayers().contains(player)) {
+                    bossBar.addPlayer(player);
+                }
+            } else {
+                bossBar.removePlayer(player);
+            }
+        }
+    }
+
+    private void removeBossBar() {
+        if (bossBarTask != null) {
+            bossBarTask.cancel();
+            bossBarTask = null;
+        }
+        if (bossBar != null) {
+            bossBar.removeAll();
+            bossBar.setVisible(false);
+            bossBar = null;
+        }
+    }
+
     public void stopVerification() {
         if (particleRenderer != null) {
             particleRenderer.stopRendering();
         }
-    
         if (verificationTask != null) {
             verificationTask.cancel();
             verificationTask = null;
         }
-    
         if (expirationTask != null) {
             expirationTask.cancel();
             expirationTask = null;
         }
-    
-        // Ya no se elimina el bloque verificador aquí
+        removeBossBar();
         if (!completed) {
             sendMessageToNearbyPlayers(plugin.getConfigManager().getMessage("deactivated"));
         }
