@@ -32,7 +32,11 @@ public class VerifBuildCommand implements CommandExecutor {
             sender.sendMessage("§e=== VerifBuild ===");
             sender.sendMessage("§f/verifbuild list §7- Lista las verificaciones activas");
             sender.sendMessage("§f/verifbuild reload §7- Recarga la configuración");
-            sender.sendMessage("§f/verifbuild give <tipo> §7- Obtiene un bloque verificador");
+            if (sender instanceof Player) {
+                sender.sendMessage("§f/verifbuild give <tipo> §7- Obtiene un bloque verificador");
+            } else {
+                sender.sendMessage("§f/verifbuild give <jugador> <tipo> §7- Da un bloque verificador a un jugador");
+            }
             return true;
         }
         
@@ -66,17 +70,33 @@ public class VerifBuildCommand implements CommandExecutor {
                 return true;
                 
             case "give":
-                if (!(sender instanceof Player)) {
-                    sender.sendMessage("§cEste comando solo puede ser usado por jugadores.");
-                    return true;
+                Player targetPlayer;
+                String verificationType;
+                
+                if (sender instanceof Player) {
+                    // Comando ejecutado por un jugador
+                    if (args.length < 2) {
+                        sender.sendMessage("§cUso: /verifbuild give <tipo>");
+                        return true;
+                    }
+                    verificationType = args[1].toLowerCase();
+                    targetPlayer = (Player) sender;
+                } else {
+                    // Comando ejecutado desde la consola
+                    if (args.length < 3) {
+                        sender.sendMessage("§cUso desde consola: /verifbuild give <jugador> <tipo>");
+                        return true;
+                    }
+                    String playerName = args[1];
+                    verificationType = args[2].toLowerCase();
+                    targetPlayer = plugin.getServer().getPlayer(playerName);
+                    
+                    if (targetPlayer == null) {
+                        sender.sendMessage("§cJugador '" + playerName + "' no encontrado o no está conectado.");
+                        return true;
+                    }
                 }
                 
-                if (args.length < 2) {
-                    sender.sendMessage("§cUso: /verifbuild give <tipo>");
-                    return true;
-                }
-                
-                String verificationType = args[1].toLowerCase();
                 Map<String, TriggerBlock> triggerBlocks = plugin.getConfigManager().getTriggerBlocks();
                 TriggerBlock triggerBlock = triggerBlocks.get(verificationType);
                 
@@ -85,13 +105,16 @@ public class VerifBuildCommand implements CommandExecutor {
                     return true;
                 }
                 
-                if (!sender.hasPermission("verifbuild.use." + verificationType) && 
-                    !sender.hasPermission("verifbuild.use.*")) {
-                    sender.sendMessage("§cNo tienes permiso para usar este tipo de verificación.");
-                    return true;
+                // Verificar permisos solo si el sender es un jugador
+                if (sender instanceof Player) {
+                    if (!sender.hasPermission("verifbuild.use." + verificationType) && 
+                        !sender.hasPermission("verifbuild.use.*")) {
+                        sender.sendMessage("§cNo tienes permiso para usar este tipo de verificación.");
+                        return true;
+                    }
                 }
                 
-                Player player = (Player) sender;
+                Player player = targetPlayer;
                 ItemStack triggerItem = new ItemStack(triggerBlock.getMaterial());
                 ItemMeta meta = triggerItem.getItemMeta();
                 if (meta != null) {
@@ -125,7 +148,13 @@ public class VerifBuildCommand implements CommandExecutor {
                 }
                 
                 player.getInventory().addItem(triggerItem);
-                player.sendMessage("§aHas recibido un bloque verificador de tipo §e" + verificationType);
+                
+                if (sender instanceof Player && sender.equals(player)) {
+                    player.sendMessage("§aHas recibido un bloque verificador de tipo §e" + verificationType);
+                } else {
+                    player.sendMessage("§aHas recibido un bloque verificador de tipo §e" + verificationType);
+                    sender.sendMessage("§aBloque verificador de tipo §e" + verificationType + " §adado a §f" + player.getName());
+                }
                 return true;
                 
             default:
